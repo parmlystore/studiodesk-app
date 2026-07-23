@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient.js';
 import Booking from './Booking.jsx';
 import Login from './Login.jsx';
 import Dashboard from './Dashboard.jsx';
+import Demo from './Demo.jsx';
 
 export default function App() {
   const [session, setSession] = useState(undefined); // undefined = loading, null = logged out
@@ -18,7 +19,7 @@ export default function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // Public booking page: /?book=willow-vine  OR  /book/willow-vine
+  // Public booking page: /?book=willow-vine  OR  /book/willow-vine  (real, Supabase-backed)
   if (bookingSlug) {
     return <Booking slug={bookingSlug} />;
   }
@@ -27,13 +28,17 @@ export default function App() {
     return <Booking slug={pathMatch[1]} />;
   }
 
-  if (session === undefined) {
-    return <div className="login-shell"><div className="login-brand">StudioDesk<span style={{color:'var(--plum)'}}>.</span></div></div>;
+  // Real login/dashboard only at /login — not linked from the public demo
+  if (path === '/login') {
+    if (session === undefined) {
+      return <div className="login-shell"><div className="login-brand">StudioDesk<span style={{color:'var(--plum)'}}>.</span></div></div>;
+    }
+    if (!session) {
+      return <Login />;
+    }
+    return <Dashboard session={session} />;
   }
 
-  if (!session) {
-    return <Login />;
-  }
-
-  return <Dashboard session={session} />;
+  // Default: public interactive demo with fake data, no login wall
+  return <Demo />;
 }
