@@ -19,7 +19,7 @@ export default function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // Public booking page: /?book=willow-vine  OR  /book/willow-vine  (real, Supabase-backed)
+  // Public booking page: /?book=willow-vine OR /book/willow-vine (real, Supabase-backed)
   if (bookingSlug) {
     return <Booking slug={bookingSlug} />;
   }
@@ -39,6 +39,10 @@ export default function App() {
     return <Dashboard session={session} />;
   }
 
-  // Default: public interactive demo with fake data, no login wall
-  return <Demo />;
+  // Public interactive demos with fake data, no login wall.
+  // /demo/basic -> Basic plan demo, /demo/pro (or default '/') -> Pro plan demo
+  if (path === '/demo/basic') {
+    return <Demo plan="basic" />;
+  }
+  return <Demo plan="pro" />;
 }
