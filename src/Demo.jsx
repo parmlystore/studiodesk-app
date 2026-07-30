@@ -11,8 +11,9 @@ const NAV = [
   { key: 'bookingsettings', label: 'Booking Settings', pro: true },
 ];
 
-export default function Demo() {
+export default function Demo({ plan = 'pro' }) {
   const [page, setPage] = useState('overview');
+  const navItems = NAV.filter(item => !item.pro || plan === 'pro');
 
   return (
     <div>
@@ -24,16 +25,15 @@ export default function Demo() {
         <nav className="sidebar">
           <div className="brand">StudioDesk<span style={{color:'var(--plum)'}}>.</span></div>
           <span className="brand-sub">Willow &amp; Vine Studio</span>
-          {NAV.map(item => (
+          {navItems.map(item => (
             <div key={item.key} className={'nav-item' + (page === item.key ? ' active' : '')} onClick={() => setPage(item.key)}>
               <span className="nav-dot"></span>{item.label}
-              {item.pro && <span className="pro-badge">PRO</span>}
             </div>
           ))}
         </nav>
         <div className="main">
           {page === 'overview' && <Overview />}
-          {page === 'bookings' && <BookingsDemo />}
+          {page === 'bookings' && <BookingsDemo plan={plan} />}
           {page === 'clients' && <ClientsDemo />}
           {page === 'finance' && <FinanceDemo />}
           {page === 'pricelist' && <PriceListDemo />}
@@ -376,7 +376,7 @@ function BookingSettingsDemo() {
   );
 }
 
-function BookingsDemo() {
+function BookingsDemo({ plan = 'pro' }) {
   const services = [
     { name: 'Vinyasa Flow Yoga', meta: '60 min · with Anya', price: 28, duration: 60 },
     { name: 'Reformer Pilates', meta: '50 min · with Marcus', price: 35, duration: 50 },
@@ -431,9 +431,11 @@ function BookingsDemo() {
         <h1>Appointments</h1>
       </div>
 
-      <div className="bk-mgmt-toolbar">
-        <button className="btn btn-outline" onClick={() => setShowPreview(true)}>🔗 Booking Link</button>
-      </div>
+      {plan === 'pro' && (
+        <div className="bk-mgmt-toolbar">
+          <button className="btn btn-outline" onClick={() => setShowPreview(true)}>🔗 Booking Link</button>
+        </div>
+      )}
 
       <div className="bk-day-strip">
         {days.map((d,i) => {
@@ -490,14 +492,16 @@ function BookingsDemo() {
             <div className="appt-main">
               <div className="appt-client">{a.client}</div>
               <div className="appt-service">{a.service}</div>
-              <span className={'tag appt-tag ' + a.tag}>{a.tag === 'online' ? '🔗 Online' : '✎ Manual'}</span>
+              {plan === 'pro'
+                ? <span className={'tag appt-tag ' + a.tag}>{a.tag === 'online' ? '🔗 Online' : '✎ Manual'}</span>
+                : <span className="tag appt-tag manual">✎ Manual</span>}
             </div>
             <div className="appt-price">${a.price}</div>
           </div>
         ))}
       </div>
 
-      {showPreview && (
+      {plan === 'pro' && showPreview && (
         <div className="preview-overlay" onClick={() => setShowPreview(false)}>
           <div className="preview-panel" onClick={e => e.stopPropagation()}>
             <div className="preview-panel-head">
