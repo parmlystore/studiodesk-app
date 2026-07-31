@@ -188,26 +188,92 @@ function FinanceDemo() {
 }
 
 function PriceListDemo() {
-  const services = [
+  const [services, setServices] = useState([
     { name: 'Vinyasa Flow Yoga', meta: '60 min', price: 28 },
     { name: 'Reformer Pilates', meta: '50 min', price: 35 },
     { name: 'Lagree Sculpt', meta: '45 min', price: 32 },
     { name: '5-Class Pack', meta: 'valid 8 weeks', price: 125 },
     { name: '10-Class Pack', meta: 'valid 12 weeks', price: 230 },
     { name: 'Unlimited Monthly', meta: 'billed monthly', price: 189 },
-  ];
+  ]);
+  const [editIdx, setEditIdx] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editMeta, setEditMeta] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newMeta, setNewMeta] = useState('');
+  const [newPrice, setNewPrice] = useState('');
+
+  function startEdit(i) {
+    setEditIdx(i); setEditName(services[i].name); setEditMeta(services[i].meta); setEditPrice(String(services[i].price));
+  }
+  function saveEdit(i) {
+    const s = [...services];
+    s[i] = { name: editName || s[i].name, meta: editMeta, price: Number(editPrice) || s[i].price };
+    setServices(s); setEditIdx(null);
+  }
+  function removeItem(i) {
+    setServices(services.filter((_, idx) => idx !== i));
+    if (editIdx === i) setEditIdx(null);
+  }
+  function addItem() {
+    if (!newName || !newPrice) return;
+    setServices([...services, { name: newName, meta: newMeta, price: Number(newPrice) }]);
+    setNewName(''); setNewMeta(''); setNewPrice(''); setShowAdd(false);
+  }
+
   return (
     <>
       <div className="page-head"><span className="eyebrow">Price list</span><h1>Your classes &amp; packages</h1></div>
-      <div className="toolbar"><button className="btn btn-outline" onClick={() => window.print()}>Print price list</button></div>
+      <div className="toolbar" style={{display:'flex', gap:10}}>
+        <button className="btn btn-outline" onClick={() => window.print()}>Print price list</button>
+        <button className="btn btn-solid" onClick={() => setShowAdd(true)}>+ Add item</button>
+      </div>
+      {showAdd && (
+        <div className="manual-form">
+          <div className="two-col">
+            <div className="field"><label>Name</label><input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="e.g. Barre Sculpt" /></div>
+            <div className="field"><label>Details</label><input value={newMeta} onChange={e=>setNewMeta(e.target.value)} placeholder="e.g. 45 min" /></div>
+          </div>
+          <div className="field" style={{maxWidth:160}}><label>Price ($)</label><input type="number" value={newPrice} onChange={e=>setNewPrice(e.target.value)} /></div>
+          <div className="bk-row" style={{marginTop:14}}>
+            <button className="btn btn-outline" onClick={() => setShowAdd(false)}>Cancel</button>
+            <button className="btn btn-solid" disabled={!newName||!newPrice} onClick={addItem}>Add item</button>
+          </div>
+        </div>
+      )}
       <div className="price-sheet">
         <h2 style={{fontFamily:'var(--fd)', fontStyle:'italic', marginBottom:20}}>Willow &amp; Vine Studio</h2>
         {services.map((s,i) => (
           <div className="price-row" key={i}>
-            <div><div className="pname">{s.name}</div><span className="pmeta">{s.meta}</span></div>
-            <div className="pval">${s.price}</div>
+            {editIdx === i ? (
+              <>
+                <div style={{flex:1, display:'flex', gap:10, flexWrap:'wrap'}}>
+                  <input className="row-edit-input" value={editName} onChange={e=>setEditName(e.target.value)} style={{maxWidth:200}} />
+                  <input className="row-edit-input" value={editMeta} onChange={e=>setEditMeta(e.target.value)} style={{maxWidth:160}} />
+                  <input className="row-edit-input" type="number" value={editPrice} onChange={e=>setEditPrice(e.target.value)} style={{maxWidth:90}} />
+                </div>
+                <div className="row-actions">
+                  <button className="icon-btn" onClick={() => saveEdit(i)} title="Save">✓</button>
+                  <button className="icon-btn" onClick={() => setEditIdx(null)} title="Cancel">✕</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div><div className="pname">{s.name}</div><span className="pmeta">{s.meta}</span></div>
+                <div style={{display:'flex', alignItems:'center', gap:10}}>
+                  <div className="pval">${s.price}</div>
+                  <div className="row-actions">
+                    <button className="icon-btn" onClick={() => startEdit(i)} title="Edit">✎</button>
+                    <button className="icon-btn" onClick={() => removeItem(i)} title="Delete">🗑</button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         ))}
+        {services.length === 0 && <p className="sub">No items yet.</p>}
       </div>
     </>
   );
