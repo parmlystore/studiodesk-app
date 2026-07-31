@@ -541,7 +541,7 @@ function BookingsDemo({ plan = 'pro' }) {
     { name: 'Lagree Sculpt', meta: '45 min · with Bea', price: 32, duration: 45 },
   ];
 
-  const days = ['Mon 29','Tue 30','Wed 1','Thu 2','Fri 3'];
+  const days = ['Mon 29','Tue 30','Wed 1','Thu 2','Fri 3','Sat 4','Sun 5'];
   const initialAppts = [
     [
       { time: '7:00am', duration: 60, client: 'Priya Nair', service: 'Vinyasa Flow Yoga', price: 28, tag: 'online' },
@@ -557,6 +557,10 @@ function BookingsDemo({ plan = 'pro' }) {
     ],
     [
       { time: '7:00am', duration: 60, client: 'Bea Thornton', service: 'Vinyasa Flow Yoga', price: 28, tag: 'online' },
+    ],
+    [],
+    [
+      { time: '8:00am', duration: 45, client: 'Marcus Ito', service: 'Lagree Sculpt', price: 32, tag: 'online' },
     ],
     [],
   ];
