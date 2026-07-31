@@ -140,7 +140,7 @@ function ClientsDemo() {
                 ) : (
                   <>
                     <td data-label="Name">{r.name}</td>
-                    <td data-label="Phone">{r.phone}</td>
+                    <td data-label="Phone" style={{whiteSpace:'nowrap'}}>{r.phone}</td>                    <td data-label="Phone">{r.phone}</td>
                     <td data-label="Last visit">{r.lastVisit}</td>
                     <td data-label="Notes">{r.notes}</td>
                     <td className="row-actions">
