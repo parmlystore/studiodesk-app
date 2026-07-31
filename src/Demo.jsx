@@ -72,22 +72,83 @@ function Overview() {
 }
 
 function ClientsDemo() {
-  const rows = [
-    ['Priya Nair', '0412 345 678', '2 days ago', 'Prefers back-row mat spot'],
-    ['Marcus Ito', '0433 210 998', 'Today', 'Knee injury — avoid deep lunges'],
-    ['Sana Aziz', '0401 776 234', '1 week ago', '10-class pack, 3 remaining'],
-    ['Bea Thornton', '0455 129 887', '3 weeks ago', 'Pregnant — modified poses only'],
-  ];
+  const [rows, setRows] = useState([
+    { name: 'Priya Nair', phone: '0412 345 678', lastVisit: '2 days ago', notes: 'Prefers back-row mat spot' },
+    { name: 'Marcus Ito', phone: '0433 210 998', lastVisit: 'Today', notes: 'Knee injury — avoid deep lunges' },
+    { name: 'Sana Aziz', phone: '0401 776 234', lastVisit: '1 week ago', notes: '10-class pack, 3 remaining' },
+    { name: 'Bea Thornton', phone: '0455 129 887', lastVisit: '3 weeks ago', notes: 'Pregnant — modified poses only' },
+  ]);
+  const [editIdx, setEditIdx] = useState(null);
+  const [editRow, setEditRow] = useState({ name:'', phone:'', lastVisit:'', notes:'' });
+  const [showAdd, setShowAdd] = useState(false);
+  const [newRow, setNewRow] = useState({ name:'', phone:'', lastVisit:'', notes:'' });
+
+  function startEdit(i) {
+    setEditIdx(i); setEditRow({ ...rows[i] });
+  }
+  function saveEdit(i) {
+    const r = [...rows]; r[i] = editRow; setRows(r); setEditIdx(null);
+  }
+  function removeRow(i) {
+    setRows(rows.filter((_, idx) => idx !== i));
+    if (editIdx === i) setEditIdx(null);
+  }
+  function addRow() {
+    if (!newRow.name) return;
+    setRows([...rows, newRow]);
+    setNewRow({ name:'', phone:'', lastVisit:'', notes:'' });
+    setShowAdd(false);
+  }
+
   return (
     <>
       <div className="page-head"><span className="eyebrow">Clients</span><h1>Every client, one record</h1></div>
+      <div className="toolbar"><button className="btn btn-solid" onClick={() => setShowAdd(true)}>+ Add client</button></div>
+      {showAdd && (
+        <div className="manual-form">
+          <div className="two-col">
+            <div className="field"><label>Name</label><input value={newRow.name} onChange={e=>setNewRow({...newRow, name:e.target.value})} placeholder="e.g. Alex Chen" /></div>
+            <div className="field"><label>Phone</label><input value={newRow.phone} onChange={e=>setNewRow({...newRow, phone:e.target.value})} /></div>
+          </div>
+          <div className="two-col">
+            <div className="field"><label>Last visit</label><input value={newRow.lastVisit} onChange={e=>setNewRow({...newRow, lastVisit:e.target.value})} placeholder="e.g. Today" /></div>
+            <div className="field"><label>Notes</label><input value={newRow.notes} onChange={e=>setNewRow({...newRow, notes:e.target.value})} /></div>
+          </div>
+          <div className="bk-row" style={{marginTop:14}}>
+            <button className="btn btn-outline" onClick={() => setShowAdd(false)}>Cancel</button>
+            <button className="btn btn-solid" disabled={!newRow.name} onClick={addRow}>Add client</button>
+          </div>
+        </div>
+      )}
       <div className="table-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Phone</th><th>Last visit</th><th>Notes</th></tr></thead>
+          <thead><tr><th>Name</th><th>Phone</th><th>Last visit</th><th>Notes</th><th></th></tr></thead>
           <tbody>
             {rows.map((r,i) => (
               <tr key={i}>
-                {r.map((c,j) => <td key={j} data-label={['Name','Phone','Last visit','Notes'][j]}>{c}</td>)}
+                {editIdx === i ? (
+                  <>
+                    <td data-label="Name"><input className="row-edit-input" value={editRow.name} onChange={e=>setEditRow({...editRow, name:e.target.value})} /></td>
+                    <td data-label="Phone"><input className="row-edit-input" value={editRow.phone} onChange={e=>setEditRow({...editRow, phone:e.target.value})} /></td>
+                    <td data-label="Last visit"><input className="row-edit-input" value={editRow.lastVisit} onChange={e=>setEditRow({...editRow, lastVisit:e.target.value})} /></td>
+                    <td data-label="Notes"><input className="row-edit-input" value={editRow.notes} onChange={e=>setEditRow({...editRow, notes:e.target.value})} /></td>
+                    <td className="row-actions">
+                      <button className="icon-btn" onClick={() => saveEdit(i)} title="Save">✓</button>
+                      <button className="icon-btn" onClick={() => setEditIdx(null)} title="Cancel">✕</button>
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td data-label="Name">{r.name}</td>
+                    <td data-label="Phone">{r.phone}</td>
+                    <td data-label="Last visit">{r.lastVisit}</td>
+                    <td data-label="Notes">{r.notes}</td>
+                    <td className="row-actions">
+                      <button className="icon-btn" onClick={() => startEdit(i)} title="Edit">✎</button>
+                      <button className="icon-btn" onClick={() => removeRow(i)} title="Delete">🗑</button>
+                    </td>
+                  </>
+                )}
               </tr>
             ))}
           </tbody>
@@ -96,6 +157,7 @@ function ClientsDemo() {
     </>
   );
 }
+
 
 function FinanceDemo() {
   const initial = [
