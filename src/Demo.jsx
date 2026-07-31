@@ -303,7 +303,10 @@ function BookingSettingsDemo() {
     setBlocked(blocked.filter((_, idx) => idx !== i));
   }
   function addBlocked() {
-    setBlocked([...blocked, { date: 'New date', note: 'Studio closed' }]);
+    const date = window.prompt('Enter the date to block (e.g. 25 Aug 2026):');
+    if (!date) return;
+    const note = window.prompt('Reason (optional):', 'Studio closed') || 'Studio closed';
+    setBlocked([...blocked, { date, note }]);
   }
 
   return (
