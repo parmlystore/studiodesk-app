@@ -418,7 +418,7 @@ function StockDemo() {
 function BookingSettingsDemo() {
   const [slotLength, setSlotLength] = useState('1hr');
   const [blocked, setBlocked] = useState([
-    { date: '25 Jul 2026', note: 'Studio closed' },
+    { date: '2026-07-25', note: 'Studio closed' },
   ]);
   const [depositOn, setDepositOn] = useState(true);
   const [depositAmt, setDepositAmt] = useState('15');
@@ -426,15 +426,24 @@ function BookingSettingsDemo() {
   const [bsb, setBsb] = useState('062-000');
   const [acctNo, setAcctNo] = useState('1234 5678');
   const [message, setMessage] = useState('Please transfer your deposit within 24 hours to secure your booking.');
+  const [showAddBlock, setShowAddBlock] = useState(false);
+  const [newBlockDate, setNewBlockDate] = useState('');
+  const [newBlockNote, setNewBlockNote] = useState('Studio closed');
 
   function removeBlocked(i) {
     setBlocked(blocked.filter((_, idx) => idx !== i));
   }
-  function addBlocked() {
-    const date = window.prompt('Enter the date to block (e.g. 25 Aug 2026):');
-    if (!date) return;
-    const note = window.prompt('Reason (optional):', 'Studio closed') || 'Studio closed';
-    setBlocked([...blocked, { date, note }]);
+  function confirmAddBlocked() {
+    if (!newBlockDate) return;
+    setBlocked([...blocked, { date: newBlockDate, note: newBlockNote || 'Studio closed' }]);
+    setNewBlockDate('');
+    setNewBlockNote('Studio closed');
+    setShowAddBlock(false);
+  }
+  function formatDate(iso) {
+    const d = new Date(iso + 'T00:00:00');
+    if (isNaN(d)) return iso;
+    return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   return (
@@ -457,11 +466,29 @@ function BookingSettingsDemo() {
       <div className="settings-card">
         <div className="settings-card-head-row">
           <span className="settings-card-head">🚫 Blocked dates</span>
-          <button className="btn btn-solid btn-sm" onClick={addBlocked}>+ Block</button>
+          <button className="btn btn-solid btn-sm" onClick={() => setShowAddBlock(true)}>+ Block</button>
         </div>
+        {showAddBlock && (
+          <div className="manual-form" style={{marginBottom:16}}>
+            <div className="two-col">
+              <div className="field">
+                <label>Date</label>
+                <input type="date" value={newBlockDate} onChange={e=>setNewBlockDate(e.target.value)} />
+              </div>
+              <div className="field">
+                <label>Reason (optional)</label>
+                <input type="text" value={newBlockNote} onChange={e=>setNewBlockNote(e.target.value)} placeholder="e.g. Studio closed" />
+              </div>
+            </div>
+            <div className="bk-row" style={{marginTop:14}}>
+              <button className="btn btn-outline" onClick={() => { setShowAddBlock(false); setNewBlockDate(''); }}>Cancel</button>
+              <button className="btn btn-solid" disabled={!newBlockDate} onClick={confirmAddBlocked}>Add blocked date</button>
+            </div>
+          </div>
+        )}
         {blocked.map((b,i) => (
           <div className="blocked-row" key={i}>
-            <div><strong>{b.date}</strong><div className="blocked-note">{b.note}</div></div>
+            <div><strong>{formatDate(b.date)}</strong><div className="blocked-note">{b.note}</div></div>
             <button className="icon-btn" onClick={() => removeBlocked(i)} title="Remove">✕</button>
           </div>
         ))}
