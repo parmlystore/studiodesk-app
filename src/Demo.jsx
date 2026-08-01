@@ -19,7 +19,7 @@ export default function Demo({ plan = 'pro' }) {
     <div>
       <div className="demo-topbanner">
         StudioDesk Demo — Sample data only.{' '}
-        <a href="https://studiodesk.store" style={{color:'#fff', textDecoration:'underline'}}>Get your own →</a>
+        <a href="https://studiodesk.store/#pricing" style={{color:'#fff', textDecoration:'underline'}}>Get your own →</a>
       </div>
       <div className="app">
         <nav className="sidebar">
