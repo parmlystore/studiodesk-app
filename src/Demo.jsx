@@ -174,7 +174,26 @@ function FinanceDemo() {
   const [editIdx, setEditIdx] = useState(null);
   const [editDesc, setEditDesc] = useState('');
   const [editAmt, setEditAmt] = useState('');
-  const total = rows.reduce((s, t) => s + t.amt, 0);
+  const [filterStart, setFilterStart] = useState('');
+  const [filterEnd, setFilterEnd] = useState('');
+
+  function parseRowDate(dateStr) {
+    if (dateStr === 'Today') return new Date();
+    const d = new Date(dateStr + ', 2026');
+    return isNaN(d) ? null : d;
+  }
+
+  const filteredRows = rows
+    .map((r, i) => ({ ...r, _idx: i }))
+    .filter(r => {
+      if (!filterStart && !filterEnd) return true;
+      const d = parseRowDate(r.date);
+      if (!d) return true;
+      if (filterStart && d < new Date(filterStart)) return false;
+      if (filterEnd && d > new Date(filterEnd)) return false;
+      return true;
+    });
+  const total = filteredRows.reduce((s, t) => s + t.amt, 0);
 
   function add() {
     if (!desc || !amt) return;
@@ -195,6 +214,17 @@ function FinanceDemo() {
     setRows(rows.filter((_, idx) => idx !== i));
     if (editIdx === i) setEditIdx(null);
   }
+  function exportCSV() {
+    const header = ['Date','Description','Amount'];
+    const csvRows = [header, ...filteredRows.map(r => [r.date, r.desc, r.amt])];
+    const csv = csvRows.map(row => row.map(cell => '"' + String(cell).replace(/"/g,'""') + '"').join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'income-expenses.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <>
@@ -207,33 +237,41 @@ function FinanceDemo() {
         <input type="number" placeholder="Amount" value={amt} onChange={e => setAmt(e.target.value)} style={{maxWidth:120}} />
         <button className="btn btn-solid" onClick={add}>Add entry</button>
       </div>
+      <div className="inline-form" style={{marginTop:10}}>
+        <label style={{fontSize:'0.8rem', color:'var(--body-soft)'}}>From</label>
+        <input type="date" value={filterStart} onChange={e=>setFilterStart(e.target.value)} />
+        <label style={{fontSize:'0.8rem', color:'var(--body-soft)'}}>To</label>
+        <input type="date" value={filterEnd} onChange={e=>setFilterEnd(e.target.value)} />
+        {(filterStart || filterEnd) && <button className="btn btn-outline" onClick={() => { setFilterStart(''); setFilterEnd(''); }}>Clear filter</button>}
+        <button className="btn btn-outline" onClick={exportCSV}>Export CSV</button>
+      </div>
       <div className="table-wrap">
         <table>
           <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th></th></tr></thead>
           <tbody>
-            {rows.map((r,i) => (
-              <tr key={i}>
+            {filteredRows.map((r) => (
+              <tr key={r._idx}>
                 <td data-label="Date">{r.date}</td>
                 <td data-label="Description">
-                  {editIdx === i
+                  {editIdx === r._idx
                     ? <input className="row-edit-input" value={editDesc} onChange={e=>setEditDesc(e.target.value)} />
                     : r.desc}
                 </td>
                 <td data-label="Amount" className={r.amt >= 0 ? 'amt-in' : 'amt-out'}>
-                  {editIdx === i
+                  {editIdx === r._idx
                     ? <input className="row-edit-input row-edit-amt" type="number" value={editAmt} onChange={e=>setEditAmt(e.target.value)} />
                     : (r.amt >= 0 ? '+' : '−') + '$' + Math.abs(r.amt)}
                 </td>
                 <td className="row-actions">
-                  {editIdx === i ? (
+                  {editIdx === r._idx ? (
                     <>
-                      <button className="icon-btn" onClick={() => saveEdit(i)} title="Save">✓</button>
+                      <button className="icon-btn" onClick={() => saveEdit(r._idx)} title="Save">✓</button>
                       <button className="icon-btn" onClick={() => setEditIdx(null)} title="Cancel">✕</button>
                     </>
                   ) : (
                     <>
-                      <button className="icon-btn" onClick={() => startEdit(i)} title="Edit">✎</button>
-                      <button className="icon-btn" onClick={() => remove(i)} title="Delete">🗑</button>
+                      <button className="icon-btn" onClick={() => startEdit(r._idx)} title="Edit">✎</button>
+                      <button className="icon-btn" onClick={() => remove(r._idx)} title="Delete">🗑</button>
                     </>
                   )}
                 </td>
