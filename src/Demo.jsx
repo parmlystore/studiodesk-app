@@ -606,7 +606,7 @@ function BookingsDemo({ plan = 'pro' }) {
     [],
   ];
 
-  const [dayIdx, setDayIdx] = useState(2);
+  const [dayIdx, setDayIdx] = useState(() => { const d = new Date().getDay(); return d === 0 ? 6 : d - 1; });
   const [apptsByDay, setApptsByDay] = useState(initialAppts);
   const [showManual, setShowManual] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
