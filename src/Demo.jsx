@@ -389,6 +389,9 @@ function TodoDemo() {
   const [text, setText] = useState('');
   function add() { if (!text) return; setRows([...rows, { text, done: false }]); setText(''); }
   function toggle(i) { const r = [...rows]; r[i].done = !r[i].done; setRows(r); }
+  const sortedRows = rows
+    .map((r, i) => ({ ...r, _idx: i }))
+    .sort((a, b) => (a.done === b.done ? 0 : a.done ? 1 : -1));
   return (
     <>
       <div className="page-head"><span className="eyebrow">To-do</span><h1>The small stuff, tracked</h1></div>
@@ -397,9 +400,9 @@ function TodoDemo() {
         <button className="btn btn-solid" onClick={add}>Add task</button>
       </div>
       <div className="todo-list">
-        {rows.map((r,i) => (
-          <div className={'todo-item' + (r.done ? ' done' : '')} key={i}>
-            <input type="checkbox" checked={r.done} onChange={() => toggle(i)} /><span>{r.text}</span>
+        {sortedRows.map((r) => (
+          <div className={'todo-item' + (r.done ? ' done' : '')} key={r._idx}>
+            <input type="checkbox" checked={r.done} onChange={() => toggle(r._idx)} /><span>{r.text}</span>
           </div>
         ))}
       </div>
