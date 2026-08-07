@@ -8,6 +8,7 @@ const NAV = [
   { key: 'pricelist', label: 'Price list' },
   { key: 'todo', label: 'To-do' },
   { key: 'stock', label: 'Stock' },
+  { key: 'support', label: 'Support' },
   { key: 'bookingsettings', label: 'Booking Settings', pro: true },
 ];
 
