@@ -40,6 +40,7 @@ export default function Demo({ plan = 'pro' }) {
           {page === 'pricelist' && <PriceListDemo />}
           {page === 'todo' && <TodoDemo />}
           {page === 'stock' && <StockDemo />}
+          {page === 'support' && <SupportDemo />}
           {page === 'bookingsettings' && <BookingSettingsDemo />}
           <div className="demo-footnote">StudioDesk Demo · studiodesk.store · Data resets on refresh</div>
         </div>
