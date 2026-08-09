@@ -458,6 +458,50 @@ function StockDemo() {
   );
 }
 
+function SupportDemo() {
+  const cpaTopics = ['ABN Registration','GST Registration','Payroll Setup','Bookkeeping System Setup','BAS Lodgement','Income Tax Return','Other question'];
+  const itTopics = ['Website or booking link issue','Payment / Stripe issue','Login or account access','Data backup question','Other question'];
+  const [tab, setTab] = useState('business');
+  const [topic, setTopic] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [details, setDetails] = useState('');
+  const [sent, setSent] = useState(false);
+  const topics = tab === 'business' ? cpaTopics : itTopics;
+  function submit() {
+    const subject = (tab === 'business' ? 'Business Support' : 'IT Support') + ' — ' + name;
+    const body = 'Name: ' + name + '\nEmail: ' + email + '\nPhone: ' + phone + '\nTopic: ' + topic + '\n\nDetails: ' + details;
+    window.location.href = 'mailto:account@ollieconsult.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+    setSent(true);
+  }
+  return (
+    <>
+      <div className="page-head"><span className="eyebrow">Support</span><h1>Get help</h1></div>
+      <div className="inline-form">
+        <button className={tab === 'business' ? 'btn btn-solid' : 'btn btn-outline'} onClick={() => { setTab('business'); setTopic(''); }}>Business Support</button>
+        <button className={tab === 'it' ? 'btn btn-solid' : 'btn btn-outline'} onClick={() => { setTab('it'); setTopic(''); }}>IT Support</button>
+      </div>
+      <p style={{fontSize:'0.85rem', color:'var(--body-soft)', margin:'14px 0'}}>We can refer you to a registered professional for registration, bookkeeping, payroll, or tax support. Select what you need below.</p>
+      <div className="inline-form">
+        <input type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} />
+        <input type="email" placeholder="Your email" value={email} onChange={e => setEmail(e.target.value)} />
+        <input type="tel" placeholder="Your phone" value={phone} onChange={e => setPhone(e.target.value)} />
+      </div>
+      <div style={{marginTop:20, marginBottom:16}}>
+        <div className="eyebrow" style={{marginBottom:10}}>What do you need help with?</div>
+        {topics.map(t => (
+          <div key={t} onClick={() => setTopic(t)} style={{padding:'12px 14px', borderRadius:6, border: topic===t ? '1.5px solid var(--plum)' : '1px solid var(--hairline)', background: topic===t ? 'var(--warn-bg)' : 'transparent', marginBottom:8, cursor:'pointer', fontSize:'0.85rem'}}>{t}</div>
+        ))}
+      </div>
+      <textarea placeholder="Additional details (optional)" value={details} onChange={e => setDetails(e.target.value)} style={{width:'100%', minHeight:90, padding:12, borderRadius:6, border:'1px solid var(--hairline)', fontFamily:'inherit', fontSize:'0.9rem', marginBottom:18}} />
+      {sent
+        ? <p style={{color:'var(--plum)', fontWeight:500}}>Thanks — we'll be in touch!</p>
+        : <button className="btn btn-solid" onClick={submit} disabled={!name || !email || !topic}>Send Request →</button>}
+    </>
+  );
+}
+
 function BookingSettingsDemo() {
   const [slotLength, setSlotLength] = useState('1hr');
   const [blocked, setBlocked] = useState([
