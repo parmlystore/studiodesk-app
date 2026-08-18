@@ -128,7 +128,7 @@ function ClientsDemo() {
           <tbody>
             {rows.map((r,i) => (
               <tr key={i}>
-                {editIdx === i ? (
+                {editing && editIdx === i ? (
                   <>
                     <td data-label="Name"><input className="row-edit-input" value={editRow.name} onChange={e=>setEditRow({...editRow, name:e.target.value})} /></td>
                     <td data-label="Phone"><input className="row-edit-input" value={editRow.phone} onChange={e=>setEditRow({...editRow, phone:e.target.value})} /></td>
@@ -298,6 +298,7 @@ function PriceListDemo() {
     { name: '10-Class Pack', meta: 'valid 12 weeks', price: 230 },
     { name: 'Unlimited Monthly', meta: 'billed monthly', price: 189 },
   ]);
+  const [editing, setEditing] = useState(false);
   const [editIdx, setEditIdx] = useState(null);
   const [editName, setEditName] = useState('');
   const [editMeta, setEditMeta] = useState('');
@@ -307,6 +308,10 @@ function PriceListDemo() {
   const [newMeta, setNewMeta] = useState('');
   const [newPrice, setNewPrice] = useState('');
 
+  function toggleEditing() {
+    if (editing) { setEditIdx(null); setShowAdd(false); }
+    setEditing(!editing);
+  }
   function startEdit(i) {
     setEditIdx(i); setEditName(services[i].name); setEditMeta(services[i].meta); setEditPrice(String(services[i].price));
   }
@@ -330,9 +335,10 @@ function PriceListDemo() {
       <div className="page-head"><span className="eyebrow">Price list</span><h1>Your classes &amp; packages</h1></div>
       <div className="toolbar" style={{display:'flex', gap:10}}>
         <button className="btn btn-outline" onClick={() => window.print()}>Print price list</button>
-        <button className="btn btn-solid" onClick={() => setShowAdd(true)}>+ Add item</button>
+        <button className="btn btn-outline" onClick={toggleEditing}>{editing ? 'Done' : 'Edit'}</button>
+        {editing && <button className="btn btn-solid" onClick={() => setShowAdd(true)}>+ Add item</button>}
       </div>
-      {showAdd && (
+      {editing && showAdd && (
         <div className="manual-form">
           <div className="two-col">
             <div className="field"><label>Name</label><input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="e.g. Barre Sculpt" /></div>
@@ -349,7 +355,7 @@ function PriceListDemo() {
         <h2 style={{fontFamily:'var(--fd)', fontStyle:'italic', marginBottom:20}}>Willow &amp; Vine Studio</h2>
         {services.map((s,i) => (
           <div className="price-row" key={i}>
-            {editIdx === i ? (
+            {editing && editIdx === i ? (
               <>
                 <div style={{flex:1, display:'flex', gap:10, flexWrap:'wrap'}}>
                   <input className="row-edit-input" value={editName} onChange={e=>setEditName(e.target.value)} style={{maxWidth:200}} />
@@ -366,10 +372,12 @@ function PriceListDemo() {
                 <div><div className="pname">{s.name}</div><span className="pmeta">{s.meta}</span></div>
                 <div style={{display:'flex', alignItems:'center', gap:10}}>
                   <div className="pval">${s.price}</div>
-                  <div className="row-actions">
-                    <button className="icon-btn" onClick={() => startEdit(i)} title="Edit">✎</button>
-                    <button className="icon-btn" onClick={() => removeItem(i)} title="Delete">🗑</button>
-                  </div>
+                  {editing && (
+                    <div className="row-actions">
+                      <button className="icon-btn" onClick={() => startEdit(i)} title="Edit">✎</button>
+                      <button className="icon-btn" onClick={() => removeItem(i)} title="Delete">🗑</button>
+                    </div>
+                  )}
                 </div>
               </>
             )}
