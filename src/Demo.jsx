@@ -332,12 +332,15 @@ function PriceListDemo() {
 
   return (
     <>
-      <div className="page-head"><span className="eyebrow">Price list</span><h1>Your classes &amp; packages</h1></div>
-      <div className="toolbar" style={{display:'flex', gap:10}}>
-        <button className="btn btn-outline" onClick={() => window.print()}>Print price list</button>
+      <div className="page-head" style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+        <div><span className="eyebrow">Price list</span><h1>Your classes &amp; packages</h1></div>
         <button className="btn btn-outline" onClick={toggleEditing}>{editing ? 'Done' : 'Edit'}</button>
-        {editing && <button className="btn btn-solid" onClick={() => setShowAdd(true)}>+ Add item</button>}
       </div>
+      {editing && (
+        <div className="toolbar" style={{display:'flex', gap:10}}>
+          <button className="btn btn-solid" onClick={() => setShowAdd(true)}>+ Add item</button>
+        </div>
+      )}
       {editing && showAdd && (
         <div className="manual-form">
           <div className="two-col">
