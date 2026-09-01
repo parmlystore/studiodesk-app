@@ -141,7 +141,7 @@ return (
 <input value={name} onChange={e => setName(e.target.value)} required />
 </div>
 <div className="field">
-<label>Logo URL</label>
+<label>Logo URL (optional)</label>
 <input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://... (paste a hosted image link)" />
 </div>
 {logoUrl && (
@@ -179,16 +179,19 @@ setRecent(appts || []);
 })();
 }, [studio]);
 
+const hour = new Date().getHours();
+const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+
 return (
 <>
 <div className="page-head">
 <span className="eyebrow">Overview</span>
-<h1>Good morning, {studio.name}.</h1>
+<h1>{greeting}, {studio.name}.</h1>
 <p className="sub">Everything about your studio in one place.</p>
 </div>
 <div className="stat-grid">
 <div className="stat"><div className="num">{stats.todayBookings}</div><div className="lbl">Bookings today</div></div>
-<div className="stat"><div className="num">${stats.monthIncome.toFixed(0)}</div><div className="lbl">Net this month</div></div>
+<div className="stat"><div className="num">$" + "{stats.monthIncome.toFixed(0)}</div><div className="lbl">Net this month</div></div>
 <div className="stat"><div className="num">{stats.lowStock}</div><div className="lbl">Low stock items</div></div>
 <div className="stat"><div className="num">{stats.openTodos}</div><div className="lbl">Open to-dos</div></div>
 </div>
@@ -217,7 +220,7 @@ return (
 <thead><tr><th>Date</th><th>Time</th><th>Class</th><th>Price</th><th>Status</th></tr></thead>
 <tbody>
 {rows.map(r => (
-<tr key={r.id}><td>{r.appointment_date}</td><td>{r.appointment_time}</td><td>{r.service_name}</td><td>${Number(r.price).toFixed(0)}</td><td>{r.status}</td></tr>
+<tr key={r.id}><td>{r.appointment_date}</td><td>{r.appointment_time}</td><td>{r.service_name}</td><td>$" + "{Number(r.price).toFixed(0)}</td><td>{r.status}</td></tr>
 ))}
 {rows.length === 0 && <tr><td colSpan={5}>No bookings yet.</td></tr>}
 </tbody>
@@ -287,12 +290,12 @@ return (
 <tbody>
 {rows.map(r => (
 <tr key={r.id}><td>{new Date(r.created_at).toLocaleDateString('en-AU')}</td><td>{r.category}</td>
-<td className={r.type === 'income' ? 'amt-in' : 'amt-out'}>{r.type === 'income' ? '+' : '−'}${Number(r.amount).toFixed(0)}</td></tr>
+<td className={r.type === 'income' ? 'amt-in' : 'amt-out'}>{r.type === 'income' ? '+' : '−'}$" + "{Number(r.amount).toFixed(0)}</td></tr>
 ))}
 </tbody>
 </table>
 <div className="stat-grid" style={{marginTop:18, marginBottom:0}}>
-<div className="stat"><div className="num">${total.toFixed(0)}</div><div className="lbl">Net total</div></div>
+<div className="stat"><div className="num">$" + "{total.toFixed(0)}</div><div className="lbl">Net total</div></div>
 </div>
 </>
 );
@@ -332,7 +335,7 @@ return (
 {rows.map(r => (
 <div className="price-row" key={r.id}>
 <div><div className="pname">{r.name}</div>{r.duration_mins && <span className="pmeta">{r.duration_mins} min</span>}</div>
-<div className="pval">${Number(r.price).toFixed(0)}</div>
+<div className="pval">$" + "{Number(r.price).toFixed(0)}</div>
 </div>
 ))}
 {rows.length === 0 && <p className="sub">No services yet — add one above.</p>}
