@@ -7,7 +7,8 @@ const [password, setPassword] = useState('');
 const [showPassword, setShowPassword] = useState(false);
 const [error, setError] = useState('');
 const [loading, setLoading] = useState(false);
-const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
+const [mode, setMode] = useState('signin'); // 'signin' | 'signup' | 'reset'
+const [resetSent, setResetSent] = useState(false);
 
 async function handleSubmit(e) {
 e.preventDefault();
@@ -16,12 +17,52 @@ setLoading(true);
 if (mode === 'signin') {
 const { error } = await supabase.auth.signInWithPassword({ email, password });
 if (error) setError(error.message);
-} else {
+} else if (mode === 'signup') {
 const { error } = await supabase.auth.signUp({ email, password });
 if (error) setError(error.message);
 else setError('Check your email to confirm your account, then sign in.');
 }
 setLoading(false);
+}
+
+async function handleReset(e) {
+e.preventDefault();
+setError('');
+setLoading(true);
+const { error } = await supabase.auth.resetPasswordForEmail(email, {
+redirectTo: window.location.origin + '/login',
+});
+setLoading(false);
+if (error) { setError(error.message); return; }
+setResetSent(true);
+}
+
+if (mode === 'reset') {
+return (
+<div className="login-shell">
+<div className="login-card">
+<div className="login-brand">StudioDesk<span style={{color:'var(--plum)'}}>.</span></div>
+<div className="login-sub">Reset your password</div>
+{resetSent ? (
+<p className="sub center" style={{margin:'16px 0 0'}}>Check your email for a link to reset your password.</p>
+) : (
+<form onSubmit={handleReset}>
+<div className="field">
+<label>Email</label>
+<input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+</div>
+{error && <div className="error-msg">{error}</div>}
+<button className="btn btn-solid" type="submit" style={{width:'100%', justifyContent:'center'}} disabled={loading}>
+{loading ? 'Sending…' : 'Send reset link'}
+</button>
+</form>
+)}
+<div style={{textAlign:'center', marginTop:18, fontSize:'0.82rem', color:'var(--body-soft)'}}>
+<a href="#" onClick={e => { e.preventDefault(); setMode('signin'); setError(''); setResetSent(false); }} style={{color:'var(--plum)', textDecoration:'underline'}}>← Back to sign in</a>
+</div>
+</div>
+</div>
+);
 }
 
 return (
@@ -44,6 +85,11 @@ style={{position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', 
 </button>
 </div>
 </div>
+{mode === 'signin' && (
+<div style={{textAlign:'right', marginTop:-6, marginBottom:14}}>
+<a href="#" onClick={e => { e.preventDefault(); setMode('reset'); setError(''); }} style={{fontSize:'0.78rem', color:'var(--body-soft)', textDecoration:'underline'}}>Forgot password?</a>
+</div>
+)}
 {error && <div className="error-msg">{error}</div>}
 <button className="btn btn-solid" type="submit" style={{width:'100%', justifyContent:'center'}} disabled={loading}>
 {loading ? 'Please wait…' : (mode === 'signin' ? 'Sign in' : 'Create account')}
