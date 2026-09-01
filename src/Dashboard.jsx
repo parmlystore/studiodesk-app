@@ -375,7 +375,8 @@ return (
 <div className="todo-list">
 {rows.map(r => (
 <div className={'todo-item' + (r.done ? ' done' : '')} key={r.id}>
-<input type="checkbox" checked={r.done} onChange={() => toggle(r)} /><span>{r.text}</span>
+<input type="checkbox" checked={r.done} onChange={() => toggle(r)} /><span style={{flex:1}}>{r.text}</span>
+<span style={{fontSize:'0.75rem', color:'var(--body-soft)', flexShrink:0, marginLeft:10}}>{new Date(r.created_at).toLocaleDateString('en-AU')}</span>
 </div>
 ))}
 {rows.length === 0 && <div className="todo-item">Nothing to do yet.</div>}
