@@ -12,6 +12,12 @@ const NAV = [
 { key: 'branding', label: 'Branding' },
 ];
 
+const PLANS = [
+{ key: 'basic', label: 'Basic', price: '$399', blurb: 'Full studio management app. Clients, finances, price list. Manual calendar entry.' },
+{ key: 'pro', label: 'Pro', price: '$799', blurb: 'Everything in Basic, plus 24/7 online booking, email confirmations and deposit handling.' },
+{ key: 'studio', label: 'Studio', price: '$1,299', blurb: 'Everything in Pro, plus custom branding, business setup, payroll & super, and tax/BAS support.' },
+];
+
 export default function Dashboard({ session }) {
 const [page, setPage] = useState('overview');
 const [studio, setStudio] = useState(null);
@@ -33,6 +39,11 @@ if (loadingStudio) return <div className="main">Loading…</div>;
 
 if (!studio) {
 return <Onboarding session={session} onCreated={setStudio} />;
+}
+
+if (!studio.unlocked) {
+const checkoutStatus = new URLSearchParams(window.location.search).get('checkout');
+return <Locked studio={studio} onUpdate={setStudio} checkoutStatus={checkoutStatus} />;
 }
 
 return (
@@ -103,6 +114,93 @@ return (
 {error && <div className="error-msg">{error}</div>}
 <button className="btn btn-solid" type="submit" style={{width:'100%', justifyContent:'center'}} disabled={saving}>{saving ? 'Creating…' : 'Create studio'}</button>
 </form>
+</div>
+</div>
+);
+}
+
+function Locked({ studio, onUpdate, checkoutStatus }) {
+const [selectedTier, setSelectedTier] = useState(studio.tier || 'pro');
+const [redirecting, setRedirecting] = useState(false);
+const [error, setError] = useState('');
+const [confirming, setConfirming] = useState(checkoutStatus === 'success');
+
+useEffect(() => {
+if (checkoutStatus !== 'success') return;
+let attempts = 0;
+const interval = setInterval(async () => {
+attempts += 1;
+const { data } = await supabase.from('studios').select('*').eq('id', studio.id).maybeSingle();
+if (data?.unlocked) {
+clearInterval(interval);
+onUpdate(data);
+} else if (attempts >= 10) {
+clearInterval(interval);
+setConfirming(false);
+}
+}, 2000);
+return () => clearInterval(interval);
+}, [checkoutStatus, studio.id, onUpdate]);
+
+async function goToCheckout() {
+setRedirecting(true);
+setError('');
+try {
+const res = await fetch('/api/create-checkout-session', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ studioId: studio.id, tier: selectedTier, ownerEmail: studio.owner_email }),
+});
+const data = await res.json();
+if (!res.ok || !data.url) {
+setError('Something went wrong starting checkout — please try again.');
+setRedirecting(false);
+return;
+}
+window.location.href = data.url;
+} catch (e) {
+setError('Something went wrong starting checkout — please try again.');
+setRedirecting(false);
+}
+}
+
+if (confirming) {
+return (
+<div className="login-shell">
+<div className="login-card center">
+<div className="login-brand">StudioDesk<span style={{color:'var(--plum)'}}>.</span></div>
+<p className="sub" style={{margin:'16px 0 0'}}>Confirming your payment…</p>
+</div>
+</div>
+);
+}
+
+return (
+<div className="login-shell">
+<div className="login-card" style={{maxWidth:640}}>
+<div className="login-brand">{studio.name}<span style={{color:'var(--plum)'}}>.</span></div>
+<p className="sub center" style={{margin:'8px 0 28px'}}>Pick a plan to unlock your dashboard.</p>
+{checkoutStatus === 'cancelled' && <div className="error-msg" style={{marginBottom:16}}>Payment was cancelled — pick a plan below to try again.</div>}
+<div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:12, marginBottom:24}}>
+{PLANS.map(p => (
+<div key={p.key} onClick={() => setSelectedTier(p.key)}
+style={{
+border: selectedTier === p.key ? '2px solid var(--plum)' : '1px solid var(--hairline-strong)',
+borderRadius:6, padding:16, cursor:'pointer', background: selectedTier === p.key ? 'var(--band-light)' : 'transparent',
+}}>
+<div style={{fontFamily:'var(--font-label)', fontSize:'0.72rem', letterSpacing:'0.06em', textTransform:'uppercase', color:'var(--body-soft)'}}>{p.label}</div>
+<div style={{fontFamily:'var(--font-display)', fontWeight:500, fontSize:'1.6rem', margin:'6px 0'}}>{p.price}</div>
+<div style={{fontSize:'0.8rem', color:'var(--body-soft)', lineHeight:1.5}}>{p.blurb}</div>
+</div>
+))}
+</div>
+{error && <div className="error-msg">{error}</div>}
+<button className="btn btn-solid" style={{width:'100%', justifyContent:'center'}} onClick={goToCheckout} disabled={redirecting}>
+{redirecting ? 'Redirecting to payment…' : `Continue to payment — ${PLANS.find(p => p.key === selectedTier)?.price}`}
+</button>
+<div style={{textAlign:'center', marginTop:16}}>
+<span className="nav-item logout-item" style={{display:'inline', cursor:'pointer'}} onClick={() => supabase.auth.signOut()}>Sign out</span>
+</div>
 </div>
 </div>
 );
