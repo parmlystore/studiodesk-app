@@ -128,7 +128,7 @@ function ClientsDemo() {
           <tbody>
             {rows.map((r,i) => (
               <tr key={i}>
-                {editing && editIdx === i ? (
+                {editIdx === i ? (
                   <>
                     <td data-label="Name"><input className="row-edit-input" value={editRow.name} onChange={e=>setEditRow({...editRow, name:e.target.value})} /></td>
                     <td data-label="Phone"><input className="row-edit-input" value={editRow.phone} onChange={e=>setEditRow({...editRow, phone:e.target.value})} /></td>
