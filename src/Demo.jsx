@@ -667,6 +667,7 @@ function BookingsDemo({ plan = 'pro' }) {
   const [apptsByDay, setApptsByDay] = useState(initialAppts);
   const [showManual, setShowManual] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [mName, setMName] = useState('');
   const [mService, setMService] = useState(0);
   const [mTime, setMTime] = useState('');
@@ -693,7 +694,7 @@ function BookingsDemo({ plan = 'pro' }) {
 
       {plan === 'pro' && (
         <div className="bk-mgmt-toolbar">
-          <button className="btn btn-outline" onClick={() => setShowPreview(true)}>🔗 Booking Link</button>
+          <button className="btn btn-outline" onClick={() => { navigator.clipboard.writeText('https://app.studiodesk.store/book/willow-vine'); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); }}>🔗 {linkCopied ? 'Copied!' : 'Booking Link'}</button>
         </div>
       )}
 
