@@ -96,6 +96,13 @@ return <Login />;
 return <Dashboard session={session} />;
 }
 
+// If a logged-in studio owner lands on the demo (e.g. a bookmarked root URL),
+// send them to their real dashboard instead of showing the public demo.
+if (session) {
+window.location.replace('/login');
+return null;
+}
+
 // Public interactive demos with fake data, no login wall.
 // /demo/basic -> Basic plan demo, /demo/pro (or default '/') -> Pro plan demo
 if (path === '/demo/basic') {
