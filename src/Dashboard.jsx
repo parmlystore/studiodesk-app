@@ -54,7 +54,7 @@ return (
 ) : (
 <div className="brand">{studio.name}<span style={{color:'var(--plum)'}}>.</span></div>
 )}
-<span className="brand-sub">{(NAV.find(n => n.key === page) || {}).label?.toUpperCase()}</span>
+<span className="brand-sub">Powered by StudioDesk</span>
 {NAV.map(item => (
 <div key={item.key} className={'nav-item' + (page === item.key ? ' active' : '')} onClick={() => setPage(item.key)}>
 <span className="nav-dot"></span>{item.label}
@@ -356,6 +356,8 @@ const [rows, setRows] = useState([]);
 const [type, setType] = useState('income');
 const [category, setCategory] = useState('');
 const [amount, setAmount] = useState('');
+const [filterStart, setFilterStart] = useState('');
+const [filterEnd, setFilterEnd] = useState('');
 
 async function load() {
 const { data } = await supabase.from('transactions').select('*').eq('studio_id', studio.id).order('created_at', { ascending: false });
@@ -369,7 +371,31 @@ await supabase.from('transactions').insert({ studio_id: studio.id, type, categor
 setCategory(''); setAmount('');
 load();
 }
-const total = rows.reduce((sum, t) => sum + (t.type === 'income' ? Number(t.amount) : -Number(t.amount)), 0);
+
+const filteredRows = rows.filter(r => {
+if (!filterStart && !filterEnd) return true;
+const d = new Date(r.created_at);
+if (filterStart && d < new Date(filterStart)) return false;
+if (filterEnd && d > new Date(filterEnd + 'T23:59:59')) return false;
+return true;
+});
+const total = filteredRows.reduce((sum, t) => sum + (t.type === 'income' ? Number(t.amount) : -Number(t.amount)), 0);
+
+function exportCSV() {
+const header = ['Date', 'Description', 'Amount'];
+const csvRows = [header, ...filteredRows.map(r => [
+new Date(r.created_at).toLocaleDateString('en-AU'),
+r.category,
+(r.type === 'income' ? '' : '-') + Number(r.amount).toFixed(2)
+])];
+const csv = csvRows.map(row => row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')).join('\n');
+const blob = new Blob([csv], { type: 'text/csv' });
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url; a.download = 'income-expenses.csv';
+document.body.appendChild(a); a.click(); document.body.removeChild(a);
+URL.revokeObjectURL(url);
+}
 
 return (
 <>
@@ -383,10 +409,18 @@ return (
 <input type="number" placeholder="Amount" value={amount} onChange={e => setAmount(e.target.value)} style={{maxWidth:120}} />
 <button className="btn btn-solid" onClick={addEntry}>Add entry</button>
 </div>
+<div className="inline-form" style={{marginTop:10}}>
+<label style={{fontSize:'0.8rem', color:'var(--body-soft)'}}>From</label>
+<input type="date" value={filterStart} onChange={e=>setFilterStart(e.target.value)} />
+<label style={{fontSize:'0.8rem', color:'var(--body-soft)'}}>To</label>
+<input type="date" value={filterEnd} onChange={e=>setFilterEnd(e.target.value)} />
+{(filterStart || filterEnd) && <button className="btn btn-outline" onClick={() => { setFilterStart(''); setFilterEnd(''); }}>Clear filter</button>}
+<button className="btn btn-outline" onClick={exportCSV}>Export CSV</button>
+</div>
 <table>
 <thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead>
 <tbody>
-{rows.map(r => (
+{filteredRows.map(r => (
 <tr key={r.id}><td>{new Date(r.created_at).toLocaleDateString('en-AU')}</td><td>{r.category}</td>
 <td className={r.type === 'income' ? 'amt-in' : 'amt-out'}>{r.type === 'income' ? '+' : '−'}${Number(r.amount).toFixed(0)}</td></tr>
 ))}
@@ -404,7 +438,6 @@ const [rows, setRows] = useState([]);
 const [name, setName] = useState('');
 const [price, setPrice] = useState('');
 const [duration, setDuration] = useState('');
-const [editing, setEditing] = useState(false);
 
 async function load() {
 const { data } = await supabase.from('services').select('*').eq('studio_id', studio.id).order('sort_order');
@@ -419,17 +452,9 @@ setName(''); setPrice(''); setDuration('');
 load();
 }
 
-async function removeService(id) {
-await supabase.from('services').delete().eq('id', id);
-load();
-}
-
 return (
 <>
-<div className="page-head" style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
-<div><span className="eyebrow">Price list</span><h1>Your classes &amp; packages</h1></div>
-<button className="btn btn-outline" onClick={() => setEditing(!editing)}>{editing ? 'Done' : 'Edit'}</button>
-</div>
+<div className="page-head"><span className="eyebrow">Price list</span><h1>Your classes &amp; packages</h1><p className="sub">This is exactly what shows on your public booking page.</p></div>
 <div className="inline-form">
 <input type="text" placeholder="Class or package name" value={name} onChange={e => setName(e.target.value)} />
 <input type="number" placeholder="Duration (mins)" value={duration} onChange={e => setDuration(e.target.value)} style={{maxWidth:160}} />
@@ -440,12 +465,9 @@ return (
 <div className="price-sheet">
 <h2 style={{fontFamily:'var(--fd)', fontStyle:'italic', marginBottom:20}}>{studio.name}</h2>
 {rows.map(r => (
-<div className="price-row" key={r.id} style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+<div className="price-row" key={r.id}>
 <div><div className="pname">{r.name}</div>{r.duration_mins && <span className="pmeta">{r.duration_mins} min</span>}</div>
-<div style={{display:'flex', alignItems:'center', gap:12}}>
 <div className="pval">${Number(r.price).toFixed(0)}</div>
-{editing && <button className="icon-btn" onClick={() => removeService(r.id)} title="Delete">×</button>}
-</div>
 </div>
 ))}
 {rows.length === 0 && <p className="sub">No services yet — add one above.</p>}
