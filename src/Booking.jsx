@@ -127,6 +127,7 @@ setStep(4);
 
 if (loading) return <div className="bk-shell center">Loading…</div>;
 if (notFound) return <div className="bk-shell center"><h1>Studio not found</h1><p className="sub">This booking link doesn't match any studio.</p></div>;
+if (studio.tier === 'basic') return <div className="bk-shell center"><h1>Online booking not available</h1><p className="sub">This studio takes bookings by phone or in person.</p></div>;
 
 return (
 <div>
