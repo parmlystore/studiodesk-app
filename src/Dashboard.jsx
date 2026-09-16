@@ -56,7 +56,7 @@ return (
 <div className="brand">{studio.name}<span style={{color:'var(--plum)'}}>.</span></div>
 )}
 <span className="brand-sub">{(NAV.find(n => n.key === page) || {}).label?.toUpperCase()}</span>
-{NAV.map(item => (
+{NAV.filter(item => studio.tier !== 'basic' || item.key !== 'bookingsettings').map(item => (
 <div key={item.key} className={'nav-item' + (page === item.key ? ' active' : '')} onClick={() => setPage(item.key)}>
 <span className="nav-dot"></span>{item.label}
 </div>
@@ -318,7 +318,11 @@ return (
 <>
 <div className="page-head" style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
 <div><span className="eyebrow">Bookings</span><h1>Upcoming &amp; past classes</h1></div>
+{studio.tier === 'basic' ? (
+<span className="sub" style={{fontSize:'0.8rem'}}>Online booking is a Pro feature — upgrade to get your booking link.</span>
+) : (
 <button className="btn btn-outline" onClick={() => { navigator.clipboard.writeText(`https://app.studiodesk.store/book/${studio.booking_slug}`); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); }}>🔗 {linkCopied ? 'Copied!' : 'Booking Link'}</button>
+)}
 </div>
 <table>
 <thead><tr><th>Date</th><th>Time</th><th>Class</th><th>Price</th><th>Status</th></tr></thead>
