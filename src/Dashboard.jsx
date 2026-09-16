@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient.js';
 const NAV = [
 { key: 'overview', label: 'Dashboard' },
 { key: 'bookings', label: 'Bookings' },
+{ key: 'bookingsettings', label: 'Booking Settings' },
 { key: 'clients', label: 'Clients' },
 { key: 'finance', label: 'Income & Expenses' },
 { key: 'pricelist', label: 'Price list' },
@@ -54,7 +55,7 @@ return (
 ) : (
 <div className="brand">{studio.name}<span style={{color:'var(--plum)'}}>.</span></div>
 )}
-<span className="brand-sub">Powered by StudioDesk</span>
+<span className="brand-sub">{(NAV.find(n => n.key === page) || {}).label?.toUpperCase()}</span>
 {NAV.map(item => (
 <div key={item.key} className={'nav-item' + (page === item.key ? ' active' : '')} onClick={() => setPage(item.key)}>
 <span className="nav-dot"></span>{item.label}
@@ -67,6 +68,7 @@ return (
 <div className="main">
 {page === 'overview' && <Overview studio={studio} />}
 {page === 'bookings' && <Bookings studio={studio} />}
+{page === 'bookingsettings' && <BookingSettings studio={studio} />}
 {page === 'clients' && <Clients studio={studio} />}
 {page === 'finance' && <Finance studio={studio} />}
 {page === 'pricelist' && <PriceList studio={studio} />}
@@ -305,6 +307,7 @@ return (
 
 function Bookings({ studio }) {
 const [rows, setRows] = useState([]);
+const [linkCopied, setLinkCopied] = useState(false);
 useEffect(() => {
 (async () => {
 const { data } = await supabase.from('appointments').select('*').eq('studio_id', studio.id).order('appointment_date', { ascending: false }).order('appointment_time');
@@ -313,7 +316,10 @@ setRows(data || []);
 }, [studio]);
 return (
 <>
-<div className="page-head"><span className="eyebrow">Bookings</span><h1>Upcoming &amp; past classes</h1></div>
+<div className="page-head" style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+<div><span className="eyebrow">Bookings</span><h1>Upcoming &amp; past classes</h1></div>
+<button className="btn btn-outline" onClick={() => { navigator.clipboard.writeText(`https://app.studiodesk.store/book/${studio.booking_slug}`); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); }}>🔗 {linkCopied ? 'Copied!' : 'Booking Link'}</button>
+</div>
 <table>
 <thead><tr><th>Date</th><th>Time</th><th>Class</th><th>Price</th><th>Status</th></tr></thead>
 <tbody>
@@ -323,6 +329,142 @@ return (
 {rows.length === 0 && <tr><td colSpan={5}>No bookings yet.</td></tr>}
 </tbody>
 </table>
+</>
+);
+}
+
+function BookingSettings({ studio }) {
+const [settings, setSettings] = useState(null);
+const [blocked, setBlocked] = useState([]);
+const [showAddBlock, setShowAddBlock] = useState(false);
+const [newBlockDate, setNewBlockDate] = useState('');
+const [newBlockNote, setNewBlockNote] = useState('Studio closed');
+const [depositAmt, setDepositAmt] = useState('');
+const [bankName, setBankName] = useState('');
+const [bankBsb, setBankBsb] = useState('');
+const [bankAccount, setBankAccount] = useState('');
+const [confirmationNote, setConfirmationNote] = useState('');
+
+async function load() {
+const { data: bs } = await supabase.from('booking_settings').select('*').eq('studio_id', studio.id).maybeSingle();
+setSettings(bs);
+setDepositAmt(bs?.deposit_amount || '');
+setBankName(bs?.bank_name || '');
+setBankBsb(bs?.bank_bsb || '');
+setBankAccount(bs?.bank_account || '');
+setConfirmationNote(bs?.confirmation_note || '');
+const { data: bd } = await supabase.from('blocked_dates').select('*').eq('studio_id', studio.id).order('date');
+setBlocked(bd || []);
+}
+useEffect(() => { load(); }, [studio]);
+
+async function setSlotLength(mins) {
+await supabase.from('booking_settings').update({ slot_length_mins: mins }).eq('studio_id', studio.id);
+setSettings({ ...settings, slot_length_mins: mins });
+}
+
+async function saveDepositFields() {
+await supabase.from('booking_settings').update({
+deposit_amount: depositAmt === '' ? 0 : Number(depositAmt),
+bank_name: bankName || null,
+bank_bsb: bankBsb || null,
+bank_account: bankAccount || null,
+confirmation_note: confirmationNote || null,
+}).eq('studio_id', studio.id);
+load();
+}
+
+async function toggleDeposit() {
+const turningOn = !(settings?.deposit_amount > 0);
+if (!turningOn) {
+await supabase.from('booking_settings').update({ deposit_amount: 0 }).eq('studio_id', studio.id);
+load();
+} else {
+setDepositAmt(depositAmt || '15');
+}
+}
+
+async function confirmAddBlocked() {
+if (!newBlockDate) return;
+await supabase.from('blocked_dates').insert({ studio_id: studio.id, date: newBlockDate, note: newBlockNote || 'Studio closed' });
+setNewBlockDate(''); setNewBlockNote('Studio closed'); setShowAddBlock(false);
+load();
+}
+async function removeBlocked(id) {
+await supabase.from('blocked_dates').delete().eq('id', id);
+load();
+}
+function formatDate(iso) {
+const d = new Date(iso + 'T00:00:00');
+if (isNaN(d)) return iso;
+return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+const depositOn = settings?.deposit_amount > 0;
+const slotOptions = [15, 30, 45, 60, 90];
+const slotLabels = { 15: '15m', 30: '30m', 45: '45m', 60: '1hr', 90: '1h30' };
+
+if (!settings) return null;
+
+return (
+<>
+<div className="page-head"><span className="eyebrow">Booking Settings</span><h1>Configure how clients book</h1></div>
+
+<div className="settings-card">
+<div className="settings-card-head">⏱ Time slot length</div>
+<div className="slot-options">
+{slotOptions.map(opt => (
+<button key={opt} className={'slot-pill' + (settings.slot_length_mins === opt ? ' selected' : '')} onClick={() => setSlotLength(opt)}>{slotLabels[opt]}</button>
+))}
+</div>
+</div>
+
+<div className="settings-card">
+<div className="settings-card-head-row">
+<span className="settings-card-head">🚫 Blocked dates</span>
+<button className="btn btn-solid btn-sm" onClick={() => setShowAddBlock(true)}>+ Block</button>
+</div>
+{showAddBlock && (
+<div className="manual-form" style={{marginBottom:16}}>
+<div className="two-col">
+<div className="field"><label>Date</label><input type="date" value={newBlockDate} onChange={e=>setNewBlockDate(e.target.value)} /></div>
+<div className="field"><label>Reason (optional)</label><input type="text" value={newBlockNote} onChange={e=>setNewBlockNote(e.target.value)} placeholder="e.g. Studio closed" /></div>
+</div>
+<div className="bk-row" style={{marginTop:14}}>
+<button className="btn btn-outline" onClick={() => { setShowAddBlock(false); setNewBlockDate(''); }}>Cancel</button>
+<button className="btn btn-solid" disabled={!newBlockDate} onClick={confirmAddBlocked}>Add blocked date</button>
+</div>
+</div>
+)}
+{blocked.map(b => (
+<div className="blocked-row" key={b.id}>
+<div><strong>{formatDate(b.date)}</strong><div className="blocked-note">{b.note}</div></div>
+<button className="icon-btn" onClick={() => removeBlocked(b.id)} title="Remove">×</button>
+</div>
+))}
+{blocked.length === 0 && <p className="sub" style={{margin:0}}>No blocked dates.</p>}
+</div>
+
+<div className="settings-card">
+<div className="settings-card-head">💰 Deposit &amp; bank details</div>
+<label className="toggle-row">
+<span className={'toggle-switch' + (depositOn ? ' on' : '')} onClick={toggleDeposit}>
+<span className="toggle-knob"></span>
+</span>
+Request a deposit
+</label>
+{depositOn && (
+<div className="settings-fields">
+<div className="field"><label>Deposit amount ($)</label><input value={depositAmt} onChange={e=>setDepositAmt(e.target.value)} onBlur={saveDepositFields} type="number" /></div>
+<div className="field"><label>Account name</label><input value={bankName} onChange={e=>setBankName(e.target.value)} onBlur={saveDepositFields} /></div>
+<div className="two-col">
+<div className="field"><label>BSB</label><input value={bankBsb} onChange={e=>setBankBsb(e.target.value)} onBlur={saveDepositFields} /></div>
+<div className="field"><label>Account No.</label><input value={bankAccount} onChange={e=>setBankAccount(e.target.value)} onBlur={saveDepositFields} /></div>
+</div>
+<div className="field"><label>Custom message</label><textarea rows="2" value={confirmationNote} onChange={e=>setConfirmationNote(e.target.value)} onBlur={saveDepositFields} /></div>
+</div>
+)}
+</div>
 </>
 );
 }
@@ -438,6 +580,7 @@ const [rows, setRows] = useState([]);
 const [name, setName] = useState('');
 const [price, setPrice] = useState('');
 const [duration, setDuration] = useState('');
+const [editing, setEditing] = useState(false);
 
 async function load() {
 const { data } = await supabase.from('services').select('*').eq('studio_id', studio.id).order('sort_order');
@@ -452,9 +595,17 @@ setName(''); setPrice(''); setDuration('');
 load();
 }
 
+async function removeService(id) {
+await supabase.from('services').delete().eq('id', id);
+load();
+}
+
 return (
 <>
-<div className="page-head"><span className="eyebrow">Price list</span><h1>Your classes &amp; packages</h1><p className="sub">This is exactly what shows on your public booking page.</p></div>
+<div className="page-head" style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+<div><span className="eyebrow">Price list</span><h1>Your classes &amp; packages</h1></div>
+<button className="btn btn-outline" onClick={() => setEditing(!editing)}>{editing ? 'Done' : 'Edit'}</button>
+</div>
 <div className="inline-form">
 <input type="text" placeholder="Class or package name" value={name} onChange={e => setName(e.target.value)} />
 <input type="number" placeholder="Duration (mins)" value={duration} onChange={e => setDuration(e.target.value)} style={{maxWidth:160}} />
@@ -465,9 +616,12 @@ return (
 <div className="price-sheet">
 <h2 style={{fontFamily:'var(--fd)', fontStyle:'italic', marginBottom:20}}>{studio.name}</h2>
 {rows.map(r => (
-<div className="price-row" key={r.id}>
+<div className="price-row" key={r.id} style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
 <div><div className="pname">{r.name}</div>{r.duration_mins && <span className="pmeta">{r.duration_mins} min</span>}</div>
+<div style={{display:'flex', alignItems:'center', gap:12}}>
 <div className="pval">${Number(r.price).toFixed(0)}</div>
+{editing && <button className="icon-btn" onClick={() => removeService(r.id)} title="Delete">×</button>}
+</div>
 </div>
 ))}
 {rows.length === 0 && <p className="sub">No services yet — add one above.</p>}
