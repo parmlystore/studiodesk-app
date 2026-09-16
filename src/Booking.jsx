@@ -22,10 +22,13 @@ const [studio, setStudio] = useState(null);
 const [services, setServices] = useState([]);
 const [instructor, setInstructor] = useState(null);
 const [settings, setSettings] = useState(null);
+const [blockedDates, setBlockedDates] = useState([]);
 
 const [step, setStep] = useState(1);
 const [service, setService] = useState(null);
-const dates = nextDays(6);
+const allDates = nextDays(14);
+const blockedSet = new Set(blockedDates.map(b => b.date));
+const dates = allDates.filter(d => !blockedSet.has(fmtDate(d))).slice(0, 6);
 const [dateIdx, setDateIdx] = useState(0);
 const [takenSlots, setTakenSlots] = useState([]);
 const [slot, setSlot] = useState(null);
@@ -36,21 +39,32 @@ const [submitting, setSubmitting] = useState(false);
 const [submitError, setSubmitError] = useState('');
 const [confirmed, setConfirmed] = useState(null);
 
-const DAILY_SLOTS = ['07:00', '08:15', '12:00', '17:30', '18:45'];
+function generateSlots(mins) {
+const stepMins = mins || 60;
+const out = [];
+for (let m = 7 * 60; m <= 19 * 60; m += stepMins) {
+const h = Math.floor(m / 60), mm = m % 60;
+out.push(`${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`);
+}
+return out;
+}
+const DAILY_SLOTS = generateSlots(settings?.slot_length_mins);
 
 useEffect(() => {
 (async () => {
 const { data: studioRow } = await supabase.from('studios').select('*').eq('booking_slug', slug).maybeSingle();
 if (!studioRow) { setNotFound(true); setLoading(false); return; }
 setStudio(studioRow);
-const [{ data: svc }, { data: instr }, { data: bs }] = await Promise.all([
+const [{ data: svc }, { data: instr }, { data: bs }, { data: bd }] = await Promise.all([
 supabase.from('services').select('*').eq('studio_id', studioRow.id).eq('active', true).order('sort_order'),
 supabase.from('instructors').select('*').eq('studio_id', studioRow.id).eq('active', true).limit(1),
 supabase.from('booking_settings').select('*').eq('studio_id', studioRow.id).maybeSingle(),
+supabase.from('blocked_dates').select('*').eq('studio_id', studioRow.id),
 ]);
 setServices(svc || []);
 setInstructor((instr && instr[0]) || null);
 setSettings(bs || null);
+setBlockedDates(bd || []);
 setLoading(false);
 })();
 }, [slug]);
